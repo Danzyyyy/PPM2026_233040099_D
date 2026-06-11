@@ -204,6 +204,85 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _konfirmasiHapusSemua() async {
+    try {
+      final list = await ApiClient.instance.getAll();
+      if (list.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tidak ada catatan untuk dihapus'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      if (!mounted) return;
+      final yakin = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+              SizedBox(width: 8),
+              Text('Hapus semua catatan?'),
+            ],
+          ),
+          content: const Text('Apakah Anda yakin ingin menghapus SELURUH catatan secara permanen?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Hapus Semua'),
+            ),
+          ],
+        ),
+      );
+
+      if (yakin == true) {
+        await ApiClient.instance.deleteAll();
+        if (!mounted) return;
+        _muatUlang();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Semua catatan berhasil dihapus'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menghapus semua catatan: ${e.message}'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi kesalahan: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+
   String _formatTanggal(DateTime dt) {
     final listBulan = [
       'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
@@ -330,6 +409,11 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Catatan Mahasiswa'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_sweep_outlined, color: Colors.red),
+            onPressed: _konfirmasiHapusSemua,
+            tooltip: 'Hapus Semua Catatan',
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _muatUlang,
@@ -566,15 +650,15 @@ class _CatatanFormPageState extends State<CatatanFormPage> {
                         borderRadius: BorderRadius.all(Radius.circular(12)),
                       ),
                     ),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) {
-                        return 'Judul wajib diisi';
-                      }
-                      if (v.trim().length < 3) {
-                        return 'Judul minimal 3 karakter';
-                      }
-                      return null;
-                    },
+                    // validator: (v) {
+                    //   if (v == null || v.trim().isEmpty) {
+                    //     return 'Judul wajib diisi';
+                    //   }
+                    //   if (v.trim().length < 3) {
+                    //     return 'Judul minimal 3 karakter';
+                    //   }
+                    //   return null;
+                    // },
                   ),
                   const SizedBox(height: 20),
                   DropdownButtonFormField<String>(

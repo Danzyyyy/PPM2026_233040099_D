@@ -78,6 +78,16 @@ class ApiClient {
         ));
   }
 
+  Future<void> deleteAll() async {
+    final list = await getAll();
+    for (final c in list) {
+      if (c.id != null) {
+        await delete(c.id!);
+      }
+    }
+  }
+
+
   // ===== Helper: kirim + tangani 3 kelas error =====
   Future<http.Response> _send(Future<http.Response> Function() req) async {
     try {
